@@ -35,6 +35,7 @@ func main() {
 	commands_.register("login", handlerLogin)
 	commands_.register("register", handlerRegister)
 	commands_.register("reset", handlerReset)
+	commands_.register("users", handlerUsers)
 	if len(os.Args) < 2 {
 		fmt.Println(errors.New("ERROR NOT ENOUGH ARGS PROVIDED"))
 		os.Exit(1)
