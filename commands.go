@@ -113,3 +113,73 @@ func handlerUsers(s *state, cmd command) error {
 	}
 	return nil
 }
+
+func handlerAgg(s *state, cmd command) error {
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		fmt.Printf("ERROR FETCHING RSS FEED IN HANDLER:%v\n", err)
+		return err
+	}
+	for _, i := range feed.Channel.Item {
+		fmt.Println(i)
+	}
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.Args) < 2 {
+		os.Exit(1)
+	}
+	feed_name := cmd.Args[0]
+	feed_url := cmd.Args[1]
+	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
+	if err != nil {
+		fmt.Printf("ERROR GETTING CURRENT USER:%v", err)
+		return err
+	}
+	new_id_ := uuid.NullUUID{
+		UUID:  current_user.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	feed_params := database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      feed_name,
+		Url:       feed_url,
+		UserID:    new_id_,
+	}
+	new_feed, err := s.dbQueries.CreateFeed(context.Background(), feed_params)
+	if err != nil {
+		fmt.Printf("ERROR ADDING NEW FEED TO DATABASE:%v\n", err)
+		return err
+	}
+	fmt.Println("New feed created:")
+	fmt.Printf("Feed ID:%v\n", new_feed.ID)
+	fmt.Printf("Created At:%v\n", new_feed.CreatedAt)
+	fmt.Printf("Updated At:%v\n", new_feed.UpdatedAt)
+	fmt.Printf("Name:%v\n", new_feed.Name)
+	fmt.Printf("URL:%v\n", new_feed.Url)
+	fmt.Printf("User ID:%v\n", new_feed.UserID)
+	return nil
+}
+
+func HandlerFeeds(s *state, cmd command) error {
+	feeds, err := s.dbQueries.GetAllFeeds(context.Background())
+	if err != nil {
+		fmt.Printf("ERROR FETCHING FEEDS:%v\n", err)
+		return err
+	}
+	for _, feed := range feeds {
+		user_name, err := s.dbQueries.GetUserNameByID(context.Background(), feed.UserID.UUID)
+		if err != nil {
+			fmt.Printf("ERROR GETTING USERNAME BY ID:%v\n", err)
+			return err
+		}
+		fmt.Printf("Feed Name:%v\n", feed.Name)
+		fmt.Printf("Feed URL:%v\n", feed.Url)
+		fmt.Printf("Feed Name:%v\n", feed.Name)
+		fmt.Printf("User Name:%v\n", user_name)
+	}
+	return nil
+}
