@@ -86,3 +86,13 @@ func handlerRegister(s *state, cmd command) error {
 	fmt.Printf("User ID:%v\n", new_user.ID)
 	return nil
 }
+
+func handlerReset(s *state, cmd command) error {
+	err := s.dbQueries.DeleteAllUsers(context.Background())
+	if err != nil {
+		fmt.Printf("ERROR REMOVING ALL USERS:%v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Users cleared from Database!")
+	return nil
+}
