@@ -161,6 +161,23 @@ func handlerAddFeed(s *state, cmd command) error {
 	fmt.Printf("Name:%v\n", new_feed.Name)
 	fmt.Printf("URL:%v\n", new_feed.Url)
 	fmt.Printf("User ID:%v\n", new_feed.UserID)
+	new_feed_id_ := uuid.NullUUID{
+		UUID:  new_feed.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	feed_follows_params := database.CreateFeedFollowsRecordParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    new_id_,
+		FeedID:    new_feed_id_,
+	}
+	new_follows_record, err := s.dbQueries.CreateFeedFollowsRecord(context.Background(), feed_follows_params)
+	if err != nil {
+		fmt.Printf("ERROR CREATING FEED FOLLOW AFTER ADDING FEED:%v", err)
+		return err
+	}
+	fmt.Printf("New feed follows record created for:%v\n", new_follows_record.UserName)
 	return nil
 }
 
@@ -180,6 +197,67 @@ func HandlerFeeds(s *state, cmd command) error {
 		fmt.Printf("Feed URL:%v\n", feed.Url)
 		fmt.Printf("Feed Name:%v\n", feed.Name)
 		fmt.Printf("User Name:%v\n", user_name)
+	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.Args) == 0 {
+		return errors.New("ERROR NO ARGS PROVIDED")
+	}
+	url := cmd.Args[0]
+	selected_feed, err := s.dbQueries.GetFeedByURL(context.Background(), url)
+	if err != nil {
+		fmt.Printf("ERROR FETCHING FEED BY URL:%v", err)
+		return err
+	}
+	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
+	if err != nil {
+		fmt.Printf("ERROR GETTING CURRENT USER:%v", err)
+	}
+	new_id_ := uuid.NullUUID{
+		UUID:  current_user.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	new_feed_id_ := uuid.NullUUID{
+		UUID:  selected_feed.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	create_feed_follow_params := database.CreateFeedFollowsRecordParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    new_id_,
+		FeedID:    new_feed_id_,
+	}
+	new_feeds_follow_record, err := s.dbQueries.CreateFeedFollowsRecord(context.Background(), create_feed_follow_params)
+	if err != nil {
+		fmt.Printf("ERROR CREATING FEED FOLLOWS RECORD:%v", err)
+		return err
+	}
+	fmt.Println("New feed follows record created!")
+	fmt.Printf("Name of feed:%v", new_feeds_follow_record.FeedName)
+	fmt.Printf("Current user:%v", new_feeds_follow_record.UserName)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
+	if err != nil {
+		fmt.Printf("ERROR GETTING CURRENT USER INFO:%v", err)
+		return err
+	}
+	new_id_ := uuid.NullUUID{
+		UUID:  current_user.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	feeds_being_followed, err := s.dbQueries.GetFeedFollowsForUser(context.Background(), new_id_)
+	if err != nil {
+		fmt.Printf("ERROR GETTING FEED FOLLOWS FOR USER :%v", err)
+		return err
+	}
+	for _, feed := range feeds_being_followed {
+		fmt.Println(feed.Name)
 	}
 	return nil
 }
