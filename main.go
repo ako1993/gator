@@ -37,10 +37,10 @@ func main() {
 	commands_.register("reset", handlerReset)
 	commands_.register("users", handlerUsers)
 	commands_.register("agg", handlerAgg)
-	commands_.register("addfeed", handlerAddFeed)
+	commands_.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	commands_.register("feeds", HandlerFeeds)
-	commands_.register("follow", handlerFollow)
-	commands_.register("following", handlerFollowing)
+	commands_.register("follow", middlewareLoggedIn(handlerFollow))
+	commands_.register("following", middlewareLoggedIn(handlerFollowing))
 
 	if len(os.Args) < 2 {
 		fmt.Println(errors.New("ERROR NOT ENOUGH ARGS PROVIDED"))

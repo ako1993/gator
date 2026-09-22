@@ -54,6 +54,18 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
+		if err != nil {
+			fmt.Printf("ERROR GETTING CURRENT USER:%v", err)
+			return err
+		}
+		handler(s, cmd, user)
+		return nil
+	}
+}
+
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) == 0 {
 		return errors.New("Error! No Args provided")
@@ -126,19 +138,14 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 2 {
 		os.Exit(1)
 	}
 	feed_name := cmd.Args[0]
 	feed_url := cmd.Args[1]
-	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
-	if err != nil {
-		fmt.Printf("ERROR GETTING CURRENT USER:%v", err)
-		return err
-	}
 	new_id_ := uuid.NullUUID{
-		UUID:  current_user.ID,
+		UUID:  user.ID,
 		Valid: true, // must set to true to indicate it's not NULL
 	}
 	feed_params := database.CreateFeedParams{
@@ -201,7 +208,7 @@ func HandlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) == 0 {
 		return errors.New("ERROR NO ARGS PROVIDED")
 	}
@@ -211,12 +218,8 @@ func handlerFollow(s *state, cmd command) error {
 		fmt.Printf("ERROR FETCHING FEED BY URL:%v", err)
 		return err
 	}
-	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
-	if err != nil {
-		fmt.Printf("ERROR GETTING CURRENT USER:%v", err)
-	}
 	new_id_ := uuid.NullUUID{
-		UUID:  current_user.ID,
+		UUID:  user.ID,
 		Valid: true, // must set to true to indicate it's not NULL
 	}
 	new_feed_id_ := uuid.NullUUID{
@@ -241,14 +244,9 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	current_user, err := s.dbQueries.GetUserByName(context.Background(), s.config.Current_user_name)
-	if err != nil {
-		fmt.Printf("ERROR GETTING CURRENT USER INFO:%v", err)
-		return err
-	}
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	new_id_ := uuid.NullUUID{
-		UUID:  current_user.ID,
+		UUID:  user.ID,
 		Valid: true, // must set to true to indicate it's not NULL
 	}
 	feeds_being_followed, err := s.dbQueries.GetFeedFollowsForUser(context.Background(), new_id_)
