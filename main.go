@@ -41,6 +41,7 @@ func main() {
 	commands_.register("feeds", HandlerFeeds)
 	commands_.register("follow", middlewareLoggedIn(handlerFollow))
 	commands_.register("following", middlewareLoggedIn(handlerFollowing))
+	commands_.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 
 	if len(os.Args) < 2 {
 		fmt.Println(errors.New("ERROR NOT ENOUGH ARGS PROVIDED"))

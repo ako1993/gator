@@ -259,3 +259,31 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 	}
 	return nil
 }
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	feed_url := cmd.Args[0]
+	feed, err := s.dbQueries.GetFeedByURL(context.Background(), feed_url)
+	if err != nil {
+		fmt.Printf("ERROR GETTING FEED FROM URL:%v", err)
+		return err
+	}
+	feed_id := uuid.NullUUID{
+		UUID:  feed.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	user_id := uuid.NullUUID{
+		UUID:  user.ID,
+		Valid: true, // must set to true to indicate it's not NULL
+	}
+	unfollow_params := database.RemoveFeedFollowParams{
+		UserID: user_id,
+		FeedID: feed_id,
+	}
+	err = s.dbQueries.RemoveFeedFollow(context.Background(), unfollow_params)
+	if err != nil {
+		fmt.Printf("ERROR REMOVING FEED FOLLOWS ")
+		return err
+	}
+	fmt.Println("Feed follows record removed!")
+	return nil
+}
