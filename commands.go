@@ -127,15 +127,17 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	time_between_reqs := cmd.Args[0]
+	interval, err := time.ParseDuration(time_between_reqs)
 	if err != nil {
-		fmt.Printf("ERROR FETCHING RSS FEED IN HANDLER:%v\n", err)
+		fmt.Printf("COULD NOT PARSE TIME FROM ARGUMENT:%v", err)
 		return err
 	}
-	for _, i := range feed.Channel.Item {
-		fmt.Println(i)
+	fmt.Printf("Collecting feeds every %v", interval)
+	ticker := time.NewTicker(interval)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
 	}
-	return nil
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
