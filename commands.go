@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/ako1993/internal/config"
@@ -287,5 +288,30 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 		return err
 	}
 	fmt.Println("Feed follows record removed!")
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command) error {
+	var limit int32
+	if len(cmd.Args) != 0 {
+		val, err := strconv.Atoi(cmd.Args[0]) // returns int
+		if err != nil {
+			fmt.Println("Error: argument is not a valid integer:", err)
+			return err
+		}
+		var num int32 = int32(val)
+		limit = num
+	} else {
+		limit = 2
+	}
+	posts, err := s.dbQueries.GetPostsForUser(context.Background(), limit)
+	if err != nil {
+		fmt.Printf("ERROR GETTING POSTS:%v", err)
+		return err
+	}
+	for _, post := range posts {
+		fmt.Println(post.Title)
+		fmt.Println(post.Description)
+	}
 	return nil
 }
